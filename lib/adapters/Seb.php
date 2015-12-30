@@ -76,13 +76,4 @@ class Seb extends AbstractIPizza
             )
         );
     }
-
-    /**
-     * @inheritdoc
-     */
-    public function addCommonParams(Dataset $dataset)
-    {
-        parent::addCommonParams($dataset);
-        $dataset->setParam('VK_CHARSET', $this->getCharset());
-    }
 }

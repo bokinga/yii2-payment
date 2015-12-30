@@ -69,26 +69,5 @@ class Krediidipank extends AbstractIPizza
         return strlen($value);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function addCommonParams(Dataset $dataset)
-    {
-        parent::addCommonParams($dataset);
-        $dataset->setParam('VK_SERVICE', '1002');
-        $dataset->setParam('VK_CHARSET', $this->getCharset());
-    }
 
-    /**
-     * @inheritdoc
-     */
-    protected function getParamDefinition()
-    {
-        return ArrayHelper::merge(
-            parent::getParamDefinition(),
-            array(
-                'VK_CHARSET' => array('length' => 11), // ISO-5589-13
-            )
-        );
-    }
 }

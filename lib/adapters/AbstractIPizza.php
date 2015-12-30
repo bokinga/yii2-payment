@@ -85,13 +85,16 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
     public function addCommonParams(Dataset $dataset)
     {
         $dataset
-            ->setParam('VK_SERVICE', $this->getConfParam('VK_SERVICE', '1001'))
+            ->setParam('VK_SERVICE', $this->getConfParam('VK_SERVICE', '1011'))
             ->setParam('VK_VERSION', '008')
             ->setParam('VK_SND_ID', $this->getConfParam('VK_SND_ID'))
             ->setParam('VK_ACC', $this->getConfParam('VK_ACC'))
             ->setParam('VK_NAME', $this->getConfParam('VK_NAME'))
             ->setParam('VK_RETURN', $this->getReturnUrl())
-            ->setParam('VK_CANCEL', $this->getCancelUrl());
+            ->setParam('VK_CANCEL', $this->getCancelUrl())
+            ->setParam('VK_ENCODING', $this->getConfParam('VK_ENCODING', 'UTF-8'))
+            ->setParam('VK_DATETIME', date(DATE_ISO8601))
+        ;
     }
 
     /**
@@ -154,12 +157,18 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
     {
         if ($this->verifyResponseMac($response)) {
             switch ($response->getParam('VK_SERVICE', '')) {
-                case '1101':
-                    $response->setIsSuccessful(true);
+                case '1111':
+                    $verifiedDate = false;
+                    if ($response->hasParam('VK_T_DATETIME')) {
+                        $verifiedDate = $this->verifyDateTime($response->getParam('VK_T_DATETIME'));
+                    }
+                    $response->setIsSuccessful($verifiedDate);
                     break;
                 case '1902':
 //					throw new \CException('aaa');
                 case '1901':
+                    // transaction did not succeed
+                case '1911':
                     // transaction did not succeed
                     break;
                 default:
@@ -240,7 +249,7 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
             'VK_RETURN' => array('length' => 60),
             'VK_CANCEL' => array('length' => 60),
             'VK_LANG' => array('length' => 3),
-            'VK_CHARSET' => array('length' => 10),
+            'VK_DATETIME' => array('length' => 24), // 1012 only
         );
     }
 
@@ -251,7 +260,7 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
     {
         return array(
             // request to make a transaction
-            '1001' => array(
+            '1011' => array(
                 'VK_SERVICE',
                 'VK_VERSION',
                 'VK_SND_ID',
@@ -261,10 +270,13 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
                 'VK_ACC',
                 'VK_NAME',
                 'VK_REF',
-                'VK_MSG'
+                'VK_MSG',
+                'VK_RETURN',
+                'VK_CANCEL',
+                'VK_DATETIME',
             ),
             // request to make a transaction
-            '1002' => array(
+            '1012' => array(
                 'VK_SERVICE',
                 'VK_VERSION',
                 'VK_SND_ID',
@@ -272,10 +284,13 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
                 'VK_AMOUNT',
                 'VK_CURR',
                 'VK_REF',
-                'VK_MSG'
+                'VK_MSG',
+                'VK_RETURN',
+                'VK_CANCEL',
+                'VK_DATETIME',
             ),
-            // 'transaction completed' response message
-            '1101' => array(
+            // 'transaction completed' response message (with 1012, 1011)
+            '1111' => array(
                 'VK_SERVICE',
                 'VK_VERSION',
                 'VK_SND_ID',
@@ -290,10 +305,10 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
                 'VK_SND_NAME',
                 'VK_REF',
                 'VK_MSG',
-                'VK_T_DATE'
+                'VK_T_DATETIME'
             ),
             // 'transaction not completed' response message
-            '1901' => array(
+            '1911' => array(
                 'VK_SERVICE',
                 'VK_VERSION',
                 'VK_SND_ID',
@@ -303,5 +318,17 @@ class AbstractIPizza extends AbstractAdapter implements AdapterInterface
                 'VK_MSG'
             ),
         );
+    }
+
+    /**
+     * @param $dateTime
+     * @return bool
+     */
+    private function verifyDateTime($dateTime)
+    {
+        $time = strtotime($dateTime);
+        $allowedDifference = 5 * 60; // 5 minutes
+
+        return abs(time() - $time) < $allowedDifference;
     }
 }
