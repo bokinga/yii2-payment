@@ -52,7 +52,7 @@ class Lhv extends AbstractIPizza
             parent::getParamMacOrderDefinition(),
             array(
                 // 'transaction not completed' response with error message
-                '1002' => array(
+                '1012' => array(
                     'VK_SERVICE',
                     'VK_VERSION',
                     'VK_SND_ID',
@@ -60,7 +60,10 @@ class Lhv extends AbstractIPizza
                     'VK_AMOUNT',
                     'VK_CURR',
                     'VK_REF',
-                    'VK_MSG'
+                    'VK_MSG',
+                    'VK_RETURN',
+                    'VK_CANCEL',
+                    'VK_DATETIME',
                 ),
             )
         );
